@@ -4,7 +4,7 @@ addpath('/home/iesteves/stats/MultipleTestingToolbox/MultipleTestingToolbox')
 main_path = '/home/iesteves/FC';
 
 DI_path = [main_path, '/data/results/DI'];
-nbs_stats_path = [main_path, 'data/results/nbs/stats'];
+nbs_stats_path = [main_path, '/data/results/nbs/stats'];
 fig_path = [main_path, 'figures/clinical'];
 
 managefolders(fig_path, 'create');

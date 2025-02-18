@@ -21,6 +21,8 @@ pipelinelog_path = config.pipelinelog_path;
 project_path = config.project_path;
 atlas = config.atlases{1};
 
+cleanup_list = config.pipelines;
+
 parcellation_log_filename = [pipelinelog_path,'/step1a_parcellation-log_', datestr(now, 'yyyymmdd-HHMMSS'),'.txt'];
 
 ind_H2N = load([atlas_path, '/Schaefer/Schaefer_H2N_ind.mat']);
@@ -76,76 +78,81 @@ writetable(T,[atlas_path, '/coord_SchaeferSubCRB7100_', num2str(nr_areas), ''],'
 
 %% Load Schaefer parcellated files (hemisphere), reorganize by network; add AAL116 subcortical + cerebellum
 % Load all Schaefer files - organized by hemisphere 
-files = dir([parcellation_inpath, '/sub-*/ses-*/BOLDpreprocessed_*SchaeferH7100*']);
-filenames = {files(:).name};
-filefolders = {files(:).folder};
 
-for f = 1:length(filenames)
-    
-    % load parcellated BOLD data with Schaefer organized by hemisphere
-    filename = filenames{f};
-    load([filefolders{f}, '/', filename]);
-    
-    % reorganize parcellated BOLD data by network using the pre-computed
-    % order
-    newBOLD = all_av(ind,:);
-    
-    % load percentage included of each parcel - Schaefer organized by
-    % hemisphere
-    load([filefolders{f}, '/percent-', filename(5:end)]);
-    
-    % reorganized percentage included of each parcel - Schaefer by
-    % network
-    newpercent = percentage_included(ind, :);
-    
-    % load correspondind parcellated BOLD using AAL116
-    file_aux = strsplit(filename, '-');
-    pipeline = file_aux{1,1};   
-    aal = load([filefolders{f}, '/', pipeline, '-parcellatedAAL116woSchaefer.mat']);
-    aal_data = aal.all_av;
-    
-    % get subcortical and cerebellum parcels
-    subcortical = aal_data(subcortical_ind_aal,:);
-    cerebellum = aal_data(cerebellum_ind_aal,:);
-    
-    % join BOLD parcellated data using Schaefer reorganized by network,
-    % AAL116 subcortical and AAL116 cerebellum
-    all_av = [newBOLD; subcortical; cerebellum];
-    
-    aal_percent = load([filefolders{f}, '/percent-', pipeline(5:end), '-parcellatedAAL116woSchaefer.mat']);
-    aal_percentage_included = aal_percent.percentage_included;
-    
-    % percentage included of each parcel of AAL116 subcortical and
-    % cerebellum
-    subcortical_percent = aal_percentage_included(subcortical_ind_aal,1);
-    cerebellum_percent = aal_percentage_included(cerebellum_ind_aal,:);
-    
-    % join parcel percentage included using Schaefer reorganized by network,
-    % AAL116 subcortical and AAL116 cerebellum
-    percentage_included = [newpercent; subcortical_percent; cerebellum_percent];
-    
-    % save parcellated BOLD and percentage included of each parcel for
-    % SchaeferSubCRB7100 combination
-    save([filefolders{f}, '/', filename(1:end-9), 'SubCRB', filename(end-7:end)], 'all_av')
-    save([filefolders{f}, '/percent-', filename(5:end-9), 'SubCRB', filename(end-7:end)], 'percentage_included')
- 
-    filedetails_aux = strsplit(filefolders{f}, '/');
-    subject = filedetails_aux{end-1};
-    session = filedetails_aux{end};
-    parcellation_log_msg = ['------ [Step 1a] ', atlas,' Parcellation for: ', subject, '_', session,' with pipeline ', pipeline];
-    disp(parcellation_log_msg);
-    logCustom(parcellation_log_msg, parcellation_log_filename)
+for p = 1:length(cleanup_list)
+    pipeline = cleanup_list{p};
 
+    files = dir([parcellation_inpath, '/sub-*/ses-*/BOLD', pipeline, '-parcellatedSchaeferH7100*']);
+    filenames = {files(:).name};
+    filefolders = {files(:).folder};
+
+    for f = 1:length(filenames)
+
+        % load parcellated BOLD data with Schaefer organized by hemisphere
+        filename = filenames{f};
+        load([filefolders{f}, '/', filename]);
+
+        % reorganize parcellated BOLD data by network using the pre-computed
+        % order
+        newBOLD = all_av(ind,:);
+
+        % load percentage included of each parcel - Schaefer organized by
+        % hemisphere
+        load([filefolders{f}, '/percent-', filename(5:end)]);
+
+        % reorganized percentage included of each parcel - Schaefer by
+        % network
+        newpercent = percentage_included(ind, :);
+
+        % load correspondind parcellated BOLD using AAL116
+        file_aux = strsplit(filename, '-');
+        pipeline = file_aux{1,1};   
+        aal = load([filefolders{f}, '/', pipeline, '-parcellatedAAL116woSchaefer.mat']);
+        aal_data = aal.all_av;
+
+        % get subcortical and cerebellum parcels
+        subcortical = aal_data(subcortical_ind_aal,:);
+        cerebellum = aal_data(cerebellum_ind_aal,:);
+
+        % join BOLD parcellated data using Schaefer reorganized by network,
+        % AAL116 subcortical and AAL116 cerebellum
+        all_av = [newBOLD; subcortical; cerebellum];
+
+        aal_percent = load([filefolders{f}, '/percent-', pipeline(5:end), '-parcellatedAAL116woSchaefer.mat']);
+        aal_percentage_included = aal_percent.percentage_included;
+
+        % percentage included of each parcel of AAL116 subcortical and
+        % cerebellum
+        subcortical_percent = aal_percentage_included(subcortical_ind_aal,1);
+        cerebellum_percent = aal_percentage_included(cerebellum_ind_aal,:);
+
+        % join parcel percentage included using Schaefer reorganized by network,
+        % AAL116 subcortical and AAL116 cerebellum
+        percentage_included = [newpercent; subcortical_percent; cerebellum_percent];
+
+        % save parcellated BOLD and percentage included of each parcel for
+        % SchaeferSubCRB7100 combination
+        save([filefolders{f}, '/', filename(1:end-9), 'SubCRB', filename(end-7:end)], 'all_av')
+        save([filefolders{f}, '/percent-', filename(5:end-9), 'SubCRB', filename(end-7:end)], 'percentage_included')
+
+        filedetails_aux = strsplit(filefolders{f}, '/');
+        subject = filedetails_aux{end-1};
+        session = filedetails_aux{end};
+        parcellation_log_msg = ['------ [Step 1a] ', atlas,' Parcellation for: ', subject, '_', session,' with pipeline ', pipeline];
+        disp(parcellation_log_msg);
+        logCustom(parcellation_log_msg, parcellation_log_filename)
+
+    end
+
+
+    %% 
+    disp('=== [Visualization] - Parcels to exclude ');
+    run([project_path, '/code/visualization/visualize_parcellation_nullROI.m']);
+
+    exclude_areas = load([atlas_path, '/parcellation_nullROI_parcel2exclude_SchaeferSubCRB7100_idx']); %[115, 116, 123, 124, 125, 126, 127, 128];
+    include_areas = setdiff(1:nr_areas, exclude_areas.parcel2exclude);
+    include_Nareas = length(include_areas);
+
+    T_included = table(coordinates_all(include_areas,:), colors_all(include_areas,:), size_all(include_areas,:), labels_all(include_areas,:));
+    writetable(T_included,[atlas_path, '/coord_SchaeferSubCRB7100_', num2str(include_Nareas)],'Delimiter',' ', 'WriteVariableNames', 0)  
 end
-
-
-%% 
-disp('=== [Visualization] - Parcels to exclude ');
-run([project_path, '/code/visualization/visualize_parcellation_nullROI.m']);
-
-exclude_areas = load([atlas_path, '/parcellation_nullROI_parcel2exclude_SchaeferSubCRB7100_idx']); %[115, 116, 123, 124, 125, 126, 127, 128];
-include_areas = setdiff(1:nr_areas, exclude_areas.parcel2exclude);
-include_Nareas = length(include_areas);
-
-T_included = table(coordinates_all(include_areas,:), colors_all(include_areas,:), size_all(include_areas,:), labels_all(include_areas,:));
-writetable(T_included,[atlas_path, '/coord_SchaeferSubCRB7100_', num2str(include_Nareas)],'Delimiter',' ', 'WriteVariableNames', 0)  
