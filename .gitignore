@@ -1,7 +1,10 @@
 data
 figures
-files
+files/brainnetviewer
+files/nbs
+files/nichord
 logs
 code/visualization/0_*
 code/visualization/figure_*
 code/scripts/exploratory
+code/to_use
